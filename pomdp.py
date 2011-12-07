@@ -60,6 +60,10 @@ def crosssum(A,B):
 
 
 def filter(F):
+    """
+    Input: F is a list of vectors (matrix)
+    Output: A reduced list of vectors uniquely identifying the value function.
+    """
     wi = set()
     fi = set(range(len(F)))
     for phi in F:
@@ -157,6 +161,9 @@ def dominate(alpha, setA):
     return None
 
 
+#
+# Test Suite
+#
 if __name__ == "__main__":
     alpha = matrix([0.2,0.2])
     
