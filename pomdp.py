@@ -1,3 +1,5 @@
+from __future__ import division
+
 import math
 import random
 
@@ -43,13 +45,14 @@ def dotproduct(vec1, vec2):
 # Model Specific Class
 #
 class Model:
-    def __init__(self, S, A, O, R, T, M):
+    def __init__(self, S, A, O, R, T, M, gamma):
         self.S = S
         self.A = A
         self.O = O
         self.R = R
         self.T = T
         self.M = M
+        self.gamma = gamma
 
     def tau(self, action, observation, S):
         """POMDPs"""
@@ -57,11 +60,8 @@ class Model:
         for alpha in S:
             t1 = mul(alpha, self.M[(observation,action)])
             t2 = self.T[action] * t1
-            ts.append(t2)
-
-        print 'tau'
-        print ts[0].size
-        print 'end tau'
+            t3 = 1/len(self.O) * self.R[action] + self.gamma*t2
+            ts.append(t3)
 
         return ts
 
@@ -75,10 +75,11 @@ class Model:
 #
 def vi(pomdp):
     S = []
-    for a in pomdp.A:
-        S.append(R[a])
+    #for a in pomdp.A:
+    #    S.append(R[a])
+    S.append(matrix([1,1,1,1]))
 
-    for x in range(2):
+    for x in range(76):
         Saz = {}
         Sa = {}
         Su = []
@@ -91,8 +92,8 @@ def vi(pomdp):
             for v in Sa[action]:
                 Su.append(v)
 
-        print 'Su',Su[0].size
         S = filter(Su)
+        print x, len(S)
 
     return S
 
@@ -131,12 +132,13 @@ def filter(F):
         i = fi.pop()
         phi = F[i]
         x = dominate(phi, W)
-        
+
         if x:
             fi.add(i)
-            _, pos = argmax([F[ii] for ii in fi], lambda y: dot(x,y))
-            wi.add(pos)
-            fi.discard(pos)
+            idx = [ii for ii in fi]
+            _, pos = argmax([F[ii] for ii in fi], lambda y: dotproduct(x,y))
+            wi.add(idx[pos])
+            fi.discard(idx[pos])
             
     return [F[ii] for ii in wi]
         
@@ -182,7 +184,7 @@ def dominate(alpha, setA):
     
     # x (alpha_p - alpha) + delta <= 0
     for vector in setA:
-        da = vector.T - alpha.T
+        da = vector - alpha
         t4 = matrix([1.0])
         t5 = matrix([da, t4])
         A = matrix([A,t5.T])
@@ -246,7 +248,8 @@ if __name__ == "__main__":
     M[('nothing','e0')] = matrix([1.0, 1.0, 1.0, 0.0])
     M[('goal','e0')] = matrix([0.0, 0.0, 0.0, 1.0])
 
-    pomdp = Model(S,A,O,R,T,M)
+    pomdp = Model(S,A,O,R,T,M, 0.75)
 
     s = vi(pomdp)
-    print s[0],s[1]
+    for v in s:
+        print v
