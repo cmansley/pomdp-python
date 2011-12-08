@@ -83,7 +83,7 @@ def union(Sa):
             for u in Su:
                 total += 1
                 t = v-u
-                if sum(t*t.T) > 0.1:
+                if sum(t*t.T) > 0.01:
                     diff += 1
 
             if diff == total:
@@ -91,6 +91,26 @@ def union(Sa):
 
     return Su
 
+def unionify(S):
+    """
+    Input: S is a list of vectors
+    Output: A list of vectors that are more like a union (very similar vectors are removed)
+    """
+    St = []
+
+    for v in S:
+        diff = 0
+        total = 0
+        for u in St:
+            total += 1
+            t = v-u
+            if sum(t*t.T) > 0.01:
+                diff += 1
+
+        if diff == total:
+            St.append(v)
+
+    return St
 
 def vi(pomdp):
     S = []
@@ -98,7 +118,7 @@ def vi(pomdp):
     #    S.append(R[a])
     S.append(matrix([1,1,1,1]))
 
-    for x in range(76):
+    for x in range(400):
         Saz = {}
         Sa = {}
         for action in pomdp.A:
@@ -109,7 +129,11 @@ def vi(pomdp):
         S = filter(union(Sa))
         print x, len(S)
 
-    return S
+    for a in pomdp.A:
+        for v in Sa[a]:
+            print a, v
+
+    return Sa
 
 
 def incprune(Saz):
@@ -134,6 +158,7 @@ def filter(F):
     Input: F is a list of vectors (matrix)
     Output: A reduced list of vectors uniquely identifying the value function.
     """
+    F = unionify(F)
     wi = set()
     fi = set(range(len(F)))
     for i in range(4): # fix me!!!
@@ -264,6 +289,24 @@ if __name__ == "__main__":
 
     pomdp = Model(S,A,O,R,T,M, 0.75)
 
-    s = vi(pomdp)
-    for v in s:
-        print v
+    Sa = vi(pomdp)
+
+
+    tests = []
+    tests.append(matrix([0.5,0.0,0.0,0.5]))
+    tests.append(matrix([0.5,0.0,0.1,0.4]))
+    tests.append(matrix([0.25,0.25,0.25,0.25]))
+    tests.append(matrix([0.3,0.1,0.4,0.2]))
+    tests.append(matrix([0.2,0.2,0.3,0.3]))
+
+    # arc solver
+    support = matrix([0.9931026876124613433916011, 0.9931026876124613433916011, 1.7655158894202862551736644, 1.0206878527024387803834315])
+
+    # chris solver
+    for x in tests:
+        mx = 0
+        for v in Sa['w0']:
+            val = sum(x.T*v)
+            if val > mx:
+                mx = val
+        print mx - sum(x.T*support)
