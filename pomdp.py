@@ -73,6 +73,25 @@ class Model:
 #
 # Incremental Pruning Functions
 #
+def union(Sa):
+    Su = []
+    
+    for s in Sa.values():
+        for v in s:
+            diff = 0
+            total = 0
+            for u in Su:
+                total += 1
+                t = v-u
+                if sum(t*t.T) > 0.1:
+                    diff += 1
+
+            if diff == total:
+                Su.append(v)
+
+    return Su
+
+
 def vi(pomdp):
     S = []
     #for a in pomdp.A:
@@ -82,17 +101,12 @@ def vi(pomdp):
     for x in range(76):
         Saz = {}
         Sa = {}
-        Su = []
         for action in pomdp.A:
             for obs in pomdp.O:
                 Saz[obs] = filter(pomdp.tau(action, obs, S))
             Sa[action] = incprune(Saz)
-                
-            # badly create union
-            for v in Sa[action]:
-                Su.append(v)
-
-        S = filter(Su)
+                        
+        S = filter(union(Sa))
         print x, len(S)
 
     return S
