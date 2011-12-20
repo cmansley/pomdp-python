@@ -60,7 +60,7 @@ class Model:
         for alpha in S:
             t1 = mul(alpha, self.M[(observation,action)])
             t2 = self.T[action] * t1
-            t3 = 1/len(self.O) * self.R[action] + self.gamma*t2
+            t3 = (1/len(self.O)) * self.R[action] + self.gamma*t2
             ts.append(t3)
 
         return ts
@@ -78,16 +78,7 @@ def union(Sa):
     
     for s in Sa.values():
         for v in s:
-            diff = 0
-            total = 0
-            for u in Su:
-                total += 1
-                t = v-u
-                if sum(t*t.T) > 0.01:
-                    diff += 1
-
-            if diff == total:
-                Su.append(v)
+            Su.append(v)
 
     return Su
 
@@ -104,7 +95,7 @@ def unionify(S):
         for u in St:
             total += 1
             t = v-u
-            if sum(t*t.T) > 0.01:
+            if sum(t*t.T) > 0.001:
                 diff += 1
 
         if diff == total:
@@ -114,11 +105,9 @@ def unionify(S):
 
 def vi(pomdp):
     S = []
-    #for a in pomdp.A:
-    #    S.append(R[a])
-    S.append(matrix([1,1,1,1]))
+    S.append(matrix([1,1]))
 
-    for x in range(400):
+    for x in range(600):
         Saz = {}
         Sa = {}
         for action in pomdp.A:
@@ -128,10 +117,6 @@ def vi(pomdp):
                         
         S = filter(union(Sa))
         print x, len(S)
-
-    for a in pomdp.A:
-        for v in Sa[a]:
-            print a, v
 
     return Sa
 
@@ -161,7 +146,7 @@ def filter(F):
     F = unionify(F)
     wi = set()
     fi = set(range(len(F)))
-    for i in range(4): # fix me!!!
+    for i in range(2): # fix me!!!
         _, pos = argmax(F, lambda x: x[i])
         wi.add(pos)
         fi.discard(pos)
@@ -257,11 +242,7 @@ def dominate(alpha, setA):
     return None
 
 
-#
-# Test Suite
-#
-if __name__ == "__main__":
-
+def oned():
     #
     # Littman 1D
     #
@@ -276,8 +257,11 @@ if __name__ == "__main__":
 
     # transitions P(s'|s,a) or T[(s',a)] = [s1,s2, ...]
     T = {}
-    T['w0'] = matrix([[1.0, 0.0, 0.0, 0.0],[1.0, 0.0, 0.0, 0.0],[0.0, 0.0, 0.0, 1.0],[0.333333, 0.333333, 0.333333, 0.0]]).T
-    T['e0'] = matrix([[0.0, 1.0, 0.0, 0.0],[0.0, 0.0, 0.0, 1.0],[0.0, 0.0, 1.0, 0.0],[0.333333, 0.333333, 0.333333, 0.0]]).T
+    #T['w0'] = matrix([[1.0, 0.0, 0.0, 0.0],[1.0, 0.0, 0.0, 0.0],[0.0, 0.0, 0.0, 1.0],[0.333333, 0.333333, 0.333333, 0.0]]).T
+    #T['e0'] = matrix([[0.0, 1.0, 0.0, 0.0],[0.0, 0.0, 0.0, 1.0],[0.0, 0.0, 1.0, 0.0],[0.333333, 0.333333, 0.333333, 0.0]]).T
+
+    T['w0'] = matrix([[0.9, 0.1, 0.0, 0.0],[0.9, 0.0, 0.0, 0.1],[0.0, 0.0, 0.1, 0.9],[0.333333,0.333333, 0.333333, 0.0]]).T
+    T['e0'] = matrix([[0.1, 0.9, 0.0, 0.0],[0.1, 0.0, 0.0, 0.9],[0.0, 0.0, 0.9, 0.1],[0.333333, 0.333333, 0.333333, 0.0]]).T
 
     # observation emmissions P(z|s,a) or M[(z,a)] = [s1,s2 ..]
     M = {}
@@ -287,10 +271,66 @@ if __name__ == "__main__":
     M[('nothing','e0')] = matrix([1.0, 1.0, 1.0, 0.0])
     M[('goal','e0')] = matrix([0.0, 0.0, 0.0, 1.0])
 
-    pomdp = Model(S,A,O,R,T,M, 0.75)
+    return (S,A,O,R,T,M,0.75)
+
+def tiger():
+    
+    S = ['tiger-left', 'tiger-right']
+    A = ['listen', 'open-left', 'open-right']
+    O = ['tiger-left','tiger-right']
+
+    R = {}
+    R['listen'] = matrix([-1, -1])
+    R['open-left'] = matrix([-100, 10])
+    R['open-right'] = matrix([10, -100])
+
+    T = {}
+    T['listen'] = matrix([[1.0, 0.0],[0.0, 1.0]]).T
+    T['open-left'] = matrix([[0.5, 0.5],[0.5, 0.5]]).T
+    T['open-right'] = matrix([[0.5, 0.5],[0.5, 0.5]]).T
+    
+    M = {}
+    M[('tiger-left','listen')] = matrix([0.85, 0.15])
+    M[('tiger-right','listen')] = matrix([0.15, 0.85])
+
+    M[('tiger-left','open-left')] = matrix([0.5, 0.5])
+    M[('tiger-right','open-left')] = matrix([0.5, 0.5])
+    
+    M[('tiger-left','open-right')] = matrix([0.5, 0.5])
+    M[('tiger-right','open-right')] = matrix([0.5, 0.5])
+                      
+    return (S,A,O,R,T,M,0.95)
+                             
+
+def main():
+    # arc solver
+    support = defaultdict(list)
+    with open('1d.noisy.POMDP-54802.alpha', 'r') as f:
+        nl = 'h'
+        while nl:
+            line = f.readline()
+            action = int(line)
+            line = f.readline()
+            support[action].append(matrix( map(float, line.split()) ))
+            nl = f.readline()
+    
+    # S,A,O,R,T,M,gamma = oned()
+    S,A,O,R,T,M,gamma = tiger()
+    pomdp = Model(S,A,O,R,T,M,gamma)
 
     Sa = vi(pomdp)
 
+    with open('mine.alpha','w') as out:
+        i = 0
+        for a in A:
+            for v in Sa[a]:
+                out.write(str(i)+'\n')
+                for item in v:
+                    out.write(str(item)+' ')
+                out.write('\n')
+                out.write('\n')
+            i += 1
+            
 
     tests = []
     tests.append(matrix([0.5,0.0,0.0,0.5]))
@@ -299,14 +339,20 @@ if __name__ == "__main__":
     tests.append(matrix([0.3,0.1,0.4,0.2]))
     tests.append(matrix([0.2,0.2,0.3,0.3]))
 
-    # arc solver
-    support = matrix([0.9931026876124613433916011, 0.9931026876124613433916011, 1.7655158894202862551736644, 1.0206878527024387803834315])
-
     # chris solver
-    for x in tests:
-        mx = 0
-        for v in Sa['w0']:
-            val = sum(x.T*v)
-            if val > mx:
-                mx = val
-        print mx - sum(x.T*support)
+    # for x in tests:
+    #     aa = []
+    #     bb = []
+    #     for v in Sa['w0']:
+    #         aa.append(sum(x.T*v))
+
+    #     for v in support[0]:
+    #         bb.append(sum(x.T*v))
+
+    #     print max(aa) - max(bb)
+
+#
+# Test Suite
+#
+if __name__ == "__main__":
+    main()
