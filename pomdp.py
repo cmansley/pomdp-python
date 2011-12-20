@@ -300,11 +300,29 @@ def tiger():
     M[('tiger-right','open-right')] = matrix([0.5, 0.5])
                       
     return (S,A,O,R,T,M,0.95)
-                             
+
+def simple():
+    
+    S = ['good', 'bad']
+    A = ['act']
+    O = ['dark', 'light']
+    
+    R = {}
+    R['act'] = matrix([1, 0])
+    
+    T = {}
+    T['act'] = matrix([[0.0, 1.0],[0.0, 1.0]]).T
+
+    M = {}
+    M[('dark', 'act')] = matrix([1, 1])
+    M[('light', 'act')] = matrix([0, 0])
+
+    return (S,A,O,R,T,M,0.95)
 
 def main():    
     # S,A,O,R,T,M,gamma = oned()
-    S,A,O,R,T,M,gamma = tiger()
+    # S,A,O,R,T,M,gamma = tiger()
+    S,A,O,R,T,M,gamma = simple()
     pomdp = Model(S,A,O,R,T,M,gamma)
 
     Sa = vi(pomdp)
