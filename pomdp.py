@@ -302,24 +302,14 @@ def tiger():
     return (S,A,O,R,T,M,0.95)
                              
 
-def main():
-    # arc solver
-    support = defaultdict(list)
-    with open('1d.noisy.POMDP-54802.alpha', 'r') as f:
-        nl = 'h'
-        while nl:
-            line = f.readline()
-            action = int(line)
-            line = f.readline()
-            support[action].append(matrix( map(float, line.split()) ))
-            nl = f.readline()
-    
+def main():    
     # S,A,O,R,T,M,gamma = oned()
     S,A,O,R,T,M,gamma = tiger()
     pomdp = Model(S,A,O,R,T,M,gamma)
 
     Sa = vi(pomdp)
 
+    # write out solution 
     with open('mine.alpha','w') as out:
         i = 0
         for a in A:
@@ -332,14 +322,25 @@ def main():
             i += 1
             
 
-    tests = []
-    tests.append(matrix([0.5,0.0,0.0,0.5]))
-    tests.append(matrix([0.5,0.0,0.1,0.4]))
-    tests.append(matrix([0.25,0.25,0.25,0.25]))
-    tests.append(matrix([0.3,0.1,0.4,0.2]))
-    tests.append(matrix([0.2,0.2,0.3,0.3]))
+    # tests = []
+    # tests.append(matrix([0.5,0.0,0.0,0.5]))
+    # tests.append(matrix([0.5,0.0,0.1,0.4]))
+    # tests.append(matrix([0.25,0.25,0.25,0.25]))
+    # tests.append(matrix([0.3,0.1,0.4,0.2]))
+    # tests.append(matrix([0.2,0.2,0.3,0.3]))
 
-    # chris solver
+    # arc solver
+    # support = defaultdict(list)
+    # with open('1d.noisy.POMDP-54802.alpha', 'r') as f:
+    #     nl = 'h'
+    #     while nl:
+    #         line = f.readline()
+    #         action = int(line)
+    #         line = f.readline()
+    #         support[action].append(matrix( map(float, line.split()) ))
+    #         nl = f.readline()
+
+    # compare
     # for x in tests:
     #     aa = []
     #     bb = []
