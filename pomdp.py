@@ -73,14 +73,18 @@ class Model:
 #
 # Incremental Pruning Functions
 #
-def union(Sa):
-    Su = []
+def union(D):
+    """
+    Input: D a dictionary of lists
+    Output: U a union of the elments of the lists
+    """
+    U = []
     
-    for s in Sa.values():
-        for v in s:
-            Su.append(v)
+    for L in D.values():
+        for item in L:
+            U.append(item)
 
-    return Su
+    return U
 
 def unionify(S):
     """
@@ -95,7 +99,7 @@ def unionify(S):
         for u in St:
             total += 1
             t = v-u
-            if sum(t*t.T) > 0.001:
+            if sum(t.T*t) > 0.01:
                 diff += 1
 
         if diff == total:
@@ -104,9 +108,15 @@ def unionify(S):
     return St
 
 def vi(pomdp):
+    """
+    
+    """
+    # Initialize value function to all zeros (from arc)
     S = []
-    S.append(matrix([1,1]))
+    alpha = matrix(0.0, (len(pomdp.S), 1))
+    S.append(alpha)
 
+    # Value iteration loop (add different check)
     for x in range(600):
         Saz = {}
         Sa = {}
@@ -116,6 +126,15 @@ def vi(pomdp):
             Sa[action] = incprune(Saz)
                         
         S = filter(union(Sa))
+        savealpha(pomdp, Sa, 'mine.alpha'+str(x))
+        # write out vectors of S
+        with open('mine.salpha'+str(x),'w') as out:
+            for v in S:
+                for item in v:
+                    out.write(str(item)+' ')
+                out.write('\n')
+                out.write('\n')
+        # end writeout
         print x, len(S)
 
     return Sa
@@ -143,13 +162,20 @@ def filter(F):
     Input: F is a list of vectors (matrix)
     Output: A reduced list of vectors uniquely identifying the value function.
     """
+    # make F more union like
     F = unionify(F)
+
+    # add all the maximum vectors by component to set of valid vectors
     wi = set()
     fi = set(range(len(F)))
     for i in range(2): # fix me!!!
-        _, pos = argmax(F, lambda x: x[i])
-        wi.add(pos)
-        fi.discard(pos)
+        idx = [ii for ii in fi]
+        _, pos = argmax([F[ii] for ii in fi], lambda x: x[i])
+        wi.add(idx[pos])
+        fi.discard(idx[pos])
+        
+        if not fi:
+            break
 
     while fi:
         W = [F[ii] for ii in wi]
@@ -163,7 +189,8 @@ def filter(F):
             _, pos = argmax([F[ii] for ii in fi], lambda y: dotproduct(x,y))
             wi.add(idx[pos])
             fi.discard(idx[pos])
-            
+
+           
     return [F[ii] for ii in wi]
         
         
@@ -195,8 +222,8 @@ def dominate(alpha, setA):
 
     # construct c
     t1 = matrix(0.0 , (len(alpha), 1))
-    t2 = matrix([1.0])
-    c = -1*matrix([t1,t2])
+    t2 = matrix([-1.0])
+    c = matrix([t1,t2])
 
     # inequalities
 
@@ -319,18 +346,11 @@ def simple():
 
     return (S,A,O,R,T,M,0.95)
 
-def main():    
-    # S,A,O,R,T,M,gamma = oned()
-    # S,A,O,R,T,M,gamma = tiger()
-    S,A,O,R,T,M,gamma = simple()
-    pomdp = Model(S,A,O,R,T,M,gamma)
-
-    Sa = vi(pomdp)
-
+def savealpha(pomdp, Sa, filename):
     # write out solution 
-    with open('mine.alpha','w') as out:
+    with open(filename,'w') as out:
         i = 0
-        for a in A:
+        for a in pomdp.A:
             for v in Sa[a]:
                 out.write(str(i)+'\n')
                 for item in v:
@@ -338,7 +358,17 @@ def main():
                 out.write('\n')
                 out.write('\n')
             i += 1
-            
+
+
+def main():
+    # S,A,O,R,T,M,gamma = oned()
+    S,A,O,R,T,M,gamma = tiger()
+    #S,A,O,R,T,M,gamma = simple()
+    pomdp = Model(S,A,O,R,T,M,gamma)
+
+    Sa = vi(pomdp)
+
+    savealpha(pomdp, Sa, 'mine.alpha')
 
     # tests = []
     # tests.append(matrix([0.5,0.0,0.0,0.5]))
@@ -369,6 +399,7 @@ def main():
     #         bb.append(sum(x.T*v))
 
     #     print max(aa) - max(bb)
+
 
 #
 # Test Suite
